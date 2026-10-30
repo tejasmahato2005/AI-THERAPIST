@@ -50,26 +50,43 @@ async def verify_webhook(
 
 
 def send_whatsapp_reply(to_number: str, message_text: str):
-    """Sends a WhatsApp text message back to the user via Meta Graph API."""
+    """Sends a WhatsApp text message back to the user via Meta Graph API.
+    Splits messages longer than 4000 chars into multiple parts (WhatsApp limit is 4096).
+    """
     url = f"https://graph.facebook.com/v21.0/{WHATSAPP_PHONE_NUMBER_ID}/messages"
     headers = {
         "Authorization": f"Bearer {WHATSAPP_TOKEN}",
         "Content-Type": "application/json"
     }
-    payload = {
-        "messaging_product": "whatsapp",
-        "to": to_number,
-        "type": "text",
-        "text": {"body": message_text}
-    }
-    try:
-        res = requests.post(url, headers=headers, json=payload, timeout=15)
-        res.raise_for_status()
-        print(f"WhatsApp reply sent successfully to {to_number}")
-    except Exception as e:
-        print(f"Error sending WhatsApp message to {to_number}: {e}")
-        if hasattr(e, "response") and e.response is not None:
-            print(f"Meta error details: {e.response.text}")
+
+    # Split into chunks of max 4000 chars (leaving buffer below 4096 limit)
+    MAX_LEN = 4000
+    chunks = []
+    while len(message_text) > MAX_LEN:
+        # Try to split at last newline before limit for clean breaks
+        split_at = message_text.rfind("\n", 0, MAX_LEN)
+        if split_at == -1:
+            split_at = MAX_LEN
+        chunks.append(message_text[:split_at])
+        message_text = message_text[split_at:].lstrip("\n")
+    if message_text:
+        chunks.append(message_text)
+
+    for i, chunk in enumerate(chunks):
+        payload = {
+            "messaging_product": "whatsapp",
+            "to": to_number,
+            "type": "text",
+            "text": {"body": chunk}
+        }
+        try:
+            res = requests.post(url, headers=headers, json=payload, timeout=15)
+            res.raise_for_status()
+            print(f"WhatsApp reply part {i+1}/{len(chunks)} sent successfully to {to_number}")
+        except Exception as e:
+            print(f"Error sending WhatsApp message to {to_number}: {e}")
+            if hasattr(e, "response") and e.response is not None:
+                print(f"Meta error details: {e.response.text}")
 
 
 

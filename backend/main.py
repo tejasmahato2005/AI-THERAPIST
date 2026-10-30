@@ -118,7 +118,9 @@ async def receive_whatsapp(request: Request):
                     send_whatsapp_reply(sender, final_response)
 
     except Exception as e:
+        import traceback
         print(f"Webhook processing error: {e}")
+        traceback.print_exc()
 
     return {"status": "ok"}
 

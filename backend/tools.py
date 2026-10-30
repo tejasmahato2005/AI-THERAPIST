@@ -19,7 +19,7 @@ def query_medgemma(prompt: str) -> str:
     - Always keep conversation going by asking open-ended questions to dive into root cause.
     """
     try:
-        client = Groq(api_key=GROQ_API_KEY)
+        client = Groq(api_key=GROQ_API_KEY, max_retries=3, timeout=60.0)
         completion = client.chat.completions.create(
             model="openai/gpt-oss-120b",
             messages=[

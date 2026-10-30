@@ -21,13 +21,13 @@ def query_medgemma(prompt: str) -> str:
     try:
         client = Groq(api_key=GROQ_API_KEY)
         completion = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model="openai/gpt-oss-120b",
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.7,
-            max_tokens=350,
+            max_tokens=500,
         )
         return completion.choices[0].message.content.strip()
     except Exception as e:

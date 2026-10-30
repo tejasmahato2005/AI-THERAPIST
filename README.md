@@ -1,5 +1,7 @@
 <div align="center">
 
+# SafeSpace 2.0
+
 ### Autonomous AI Mental Health Therapist & Real-Time Crisis Intervention Agent
 
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)

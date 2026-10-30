@@ -1,710 +1,327 @@
-# SafeSpace (2.0) – AI Mental Health Therapist
+<div align="center">
 
-SafeSpace is an AI-powered mental health companion that combines a chat-style frontend, an LLM-based backend agent, and integrations with Twilio WhatsApp and Google Maps. It is designed to offer empathetic, tool-augmented support, including:
+### Autonomous AI Mental Health Therapist & Real-Time Crisis Intervention Agent
 
-- Conversational mental health guidance using a therapeutic LLM (MedGemma via Groq)
-- Detection of crisis scenarios with an emergency call tool (Twilio voice)
-- A location-aware tool that finds nearby therapists using Google Maps
-- A simple Streamlit chat UI for web, plus a Twilio WhatsApp webhook for chat over WhatsApp
+[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
+[![Groq](https://img.shields.io/badge/Groq-LPU%20Inference-f55036?style=for-the-badge&logo=fastlane&logoColor=white)](https://groq.com/)
+[![LangGraph](https://img.shields.io/badge/LangGraph-Agentic%20Workflow-1C3C3C?style=for-the-badge&logo=langchain&logoColor=white)](https://langchain-ai.github.io/langgraph/)
+[![Meta WhatsApp](https://img.shields.io/badge/WhatsApp-Cloud%20API%20v21.0-25D366?style=for-the-badge&logo=whatsapp&logoColor=white)](https://developers.facebook.com/)
+[![Google Maps](https://img.shields.io/badge/Google%20Maps-Places%20%26%20Geocode-4285F4?style=for-the-badge&logo=googlemaps&logoColor=white)](https://developers.google.com/maps)
+[![Twilio](https://img.shields.io/badge/Twilio-Voice%20Intervention-F22F46?style=for-the-badge&logo=twilio&logoColor=white)](https://www.twilio.com/)
+[![Streamlit](https://img.shields.io/badge/Streamlit-Web%20Interface-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](https://streamlit.io/)
+[![Deployment](https://img.shields.io/badge/Deploy-Render-46E3B7?style=for-the-badge&logo=render&logoColor=white)](https://render.com/)
 
-The project is structured as a small, opinionated demo of how to build a **tool-using AI agent** for mental health support.
+<p align="center">
+  <b>A compassionate, 24/7 AI-driven psychological companion equipped with autonomous clinical reasoning, automated life-saving crisis voice dispatch, licensed therapist geo-discovery, and dual omnichannel availability (WhatsApp & Web).</b>
+</p>
 
-> **Important:** This project is for educational/demo purposes only and is **not** a substitute for professional mental health care. Do not rely on it for emergency situations.
+[Key Features](#-key-features) • [Why SafeSpace](#-why-safespace-works) • [System Architecture](#-system-architecture) • [Tools & Tech Stack](#-technology-stack--apis) • [Quickstart Guide](#-installation--setup) • [Deployment](#-cloud-deployment-render) • [Safety & Ethics](#-safety--ethical-guardrails)
 
 ---
 
-## Project Structure
+</div>
+
+## 📖 Overview
+
+**SafeSpace 2.0** is an intelligent, multi-tool agentic mental health platform designed to bridge the accessibility gap in emotional and psychological care. Built upon modern cognitive AI architectures (**LangGraph ReAct Pattern** and **Groq LPUs**), SafeSpace does not simply regurgitate canned answers—it actively reasons about a user's emotional state, selects specialized clinical tools, and intervenes proactively when danger is sensed.
+
+Users can converse naturally with **Dr. Emily Hartman**—a clinically attuned AI psychologist persona—either directly from **WhatsApp** (leveraging the Meta Graph Cloud API) or via an intuitive **Streamlit Web Portal**. If a user expresses severe trauma, despair, or suicidal thoughts, SafeSpace autonomously breaks conversational mode and triggers an **instant emergency phone call** to designated crisis responders via Twilio.
+
+---
+
+## ✨ Key Features
+
+- 🩺 **Clinical Empathy Engine (Dr. Emily Hartman)**: Utilizes specialized therapeutic conversation modeling (emotional attunement, normalization, practical guidance, and strengths-focused questioning) without sterile medical jargon.
+- ⚡ **Ultra-Low Latency Inference**: Powered by **Groq Cloud LPUs** executing the high-parameter `openai/gpt-oss-120b` reasoning model in milliseconds.
+- 🛡️ **Autonomous Crisis Escalation (Twilio Voice)**: Instantly detects suicidal ideation or self-harm intentions and autonomously places an urgent voice call to emergency contacts or safety helplines.
+- 📍 **Real-Time Geocoded Therapist Finder (Google Maps API)**: Analyzes user queries like *"Find someone near Kolkata"* or *"Therapist in San Francisco"*, converts locations to coordinates, and returns real verified psychotherapist clinics with phone numbers and addresses within a 5 km radius.
+- 💬 **Omnichannel Integration (Meta WhatsApp Cloud API)**: Native webhook integration supporting official Meta WhatsApp Cloud API v21.0, featuring automated 4000-character intelligent message splitting for smooth chat delivery.
+- 🌐 **Interactive Streamlit Web Dashboard**: Clean browser interface displaying real-time agent responses alongside visible tool-dispatch indicators (`[ask_mental_health_specialist]`, `[emergency_call_tool]`, `[find_nearby_therapists_by_location]`).
+- 🔒 **Production-Hardened Sanitization**: Immune to HTTP header newline corruption bugs, whitespace-stripped environment reads, and resilient request retry mechanisms.
+
+---
+
+## 🎯 Why SafeSpace Works
+
+| Traditional Chatbots | SafeSpace 2.0 Agentic Architecture |
+| :--- | :--- |
+| **Static Scripted Responses**: Repetitive, generic advice that feels cold and robotic. | **Attuned Persona Reasoning**: Dr. Emily Hartman applies genuine clinical psychology frameworks. |
+| **Isolated Silo**: Cannot interact with external real-world services. | **Multi-Tool Autonomous Action**: Can call phones, look up map data, and search specialized models. |
+| **Passive in Emergencies**: Prints a helpline number that a person in crisis may be unable to dial. | **Active Life-Saving Escalation**: Automatically dials the crisis helpline / emergency guardian in real time. |
+| **Closed Ecosystem**: Trapped within custom proprietary apps. | **Frictionless WhatsApp Access**: Available on the messaging app 2+ billion people already have in their pocket. |
+
+---
+
+## 🏛️ System Architecture
+
+```mermaid
+flowchart TD
+    subgraph Clients["Omnichannel User Frontends"]
+        WA[("📱 WhatsApp User")] <-->|HTTPS Webhook| META["Meta WhatsApp Cloud API v21.0"]
+        WEB["💻 Streamlit Web UI"] <-->|POST /ask| FASTAPI["⚡ FastAPI Backend Engine\n(Uvicorn / Render)"]
+    end
+
+    META <-->|POST /webhook\nGET /webhook (Challenge)| FASTAPI
+
+    subgraph AgenticCore["LangGraph Autonomous ReAct Core"]
+        FASTAPI --> AGENT["🤖 LangGraph ReAct Agent\n(Groq LPU: openai/gpt-oss-120b)"]
+        AGENT --> REASON{"Clinical Intent Reasoning\n& State Assessment"}
+    end
+
+    subgraph Tools["Autonomous Tool Arsenal"]
+        REASON -->|"General Emotional Support"| T1["🩺 ask_mental_health_specialist\n(Dr. Emily Persona Prompt + Groq)"]
+        REASON -->|"Local Help Query"| T2["📍 find_nearby_therapists_by_location\n(Google Maps Geocoding & Places API)"]
+        REASON -->|"Self-Harm / Crisis Detected"| T3["🚨 emergency_call_tool\n(Twilio Voice REST API Call)"]
+    end
+
+    T1 --> DISPATCH["Unified Response Parser"]
+    T2 --> DISPATCH
+    T3 --> DISPATCH
+
+    DISPATCH -->|"WhatsApp Splitter (Max 4000 Chars)"| META
+    DISPATCH -->|"JSON Payload"| WEB
+```
+
+---
+
+## 🛠️ Technology Stack & APIs
+
+### 1. Core Languages & Runtime
+- **Python 3.11+**: Fast, modern typed Python runtime.
+- **FastAPI**: High-performance asynchronous REST API framework handling inbound webhooks and frontend queries.
+- **Uvicorn**: Lightning-fast ASGI web server implementation.
+- **uv / pip**: Cutting-edge Python packaging and dependency management.
+
+### 2. Large Language Models & AI Agent Orchestration
+- **Groq LPU (Language Processing Unit)**: Near-zero latency inference provider.
+- **`openai/gpt-oss-120b`**: Massive 120B parameter reasoning model running on Groq, delivering thoughtful clinical judgment and tool execution.
+- **LangGraph & LangChain (`langgraph.prebuilt.create_react_agent`)**: ReAct (Reasoning + Acting) loop managing agent decisions, state management, and tool call routing.
+- **MedGemma / Dr. Emily Framework**: Specialized therapeutic prompt template enforcing emotional attunement, normalization, practical guidance, and strengths-focused questioning.
+
+### 3. External Cloud APIs & Services
+- **Meta WhatsApp Cloud API (Graph API v21.0)**: Direct webhook integration enabling two-way WhatsApp messaging with verify-token handshakes and payload parsing.
+- **Twilio Voice API**: Automated telephone dispatch service initiating outbound calls (`client.calls.create`) with programmable TwiML voice scripts during emergency triggers.
+- **Google Maps Platform (Geocoding + Places API)**:
+  - *Geocoding API*: Converts human location inputs (*e.g., "Kolkata", "Brooklyn"*) into exact latitude and longitude.
+  - *Places API (`places_nearby` & `place`)*: Queries licensed psychotherapists within a 5000-meter radius, retrieving verified clinic names, vicinity addresses, and telephone numbers.
+- **Render Cloud Platform**: Production server hosting the containerized FastAPI backend with continuous CI/CD GitHub deployment.
+- **Streamlit**: Rapid web application framework rendering the conversational browser UI.
+
+---
+
+## 📂 Project Directory Structure
 
 ```text
-safespace-ai-therapist/
+ai-therapist-2.0/
 ├── backend/
-│   ├── ai_agent.py         # LangGraph-based AI agent + tools (LLM, emergency call, therapist finder)
-│   ├── config.py           # API keys and configuration (not shown here; you create it)
-│   ├── main.py             # FastAPI backend (JSON /ask + Twilio WhatsApp /whatsapp_ask)
-│   ├── tools.py            # Low-level tool implementations (MedGemma, Twilio call, etc.)
-│   └── test_location_tool.py  # Tests/examples for the location tool
-├── frontend.py              # Streamlit chat UI (web client) talking to FastAPI backend
-├── pyproject.toml           # Project metadata and Python dependencies (managed with uv)
-└── README.md                # Main project README
+│   ├── ai_agent.py          # LangGraph ReAct agent definition, tools binding & system prompt
+│   ├── config.py            # Environment configuration with automatic whitespace sanitation (.strip())
+│   ├── main.py              # FastAPI server, Meta WhatsApp webhooks (/webhook), & /ask API
+│   ├── tools.py             # Tool implementations: Dr. Emily LLM generator & Twilio emergency caller
+│   └── test_location_tool.py# Isolated unit test suite for Google Maps Therapist Finder
+├── frontend.py              # Streamlit interactive web interface
+├── pyproject.toml           # Modern project specifications & uv dependencies
+├── requirements.txt         # Production pip dependency manifest
+├── .gitignore               # Environment and secret exclusions
+└── README.md                # Comprehensive project documentation
 ```
 
-### Key Components
-
-- **`frontend.py`**
-  - A Streamlit app that:
-    - Renders a chat interface with `st.chat_input` and `st.chat_message`.
-    - Sends user messages to the backend endpoint `POST /ask` on `http://localhost:8000/ask`.
-    - Displays the AI agent's response along with the name of any tool that was used.
-
-- **`backend/main.py`**
-  - Defines a FastAPI application with two main endpoints:
-    - `POST /ask`: JSON API used by the Streamlit frontend.
-    - `POST /whatsapp_ask`: Twilio WhatsApp webhook endpoint that receives form-encoded messages (Body field) and responds with TwiML.
-  - Uses `ai_agent.graph` (LangGraph REAct agent) with `parse_response` to generate responses.
-  - Includes a helper `_twiml_message()` to build minimal TwiML XML responses for Twilio.
-
-- **`backend/ai_agent.py`**
-  - Declares several LangChain tools using `@tool`:
-    - `ask_mental_health_specialist(query: str) -> str`
-      - Uses `query_medgemma()` (from `tools.py`) to call a MedGemma-based model for therapeutic responses.
-    - `emergency_call_tool() -> None`
-      - Uses `call_emergency()` (from `tools.py`) to trigger a Twilio voice call to a safety helpline.
-    - `find_nearby_therapists_by_location(location: str) -> str`
-      - Uses the Google Maps API to geocode a location and return nearby therapists (name, address, phone).
-  - Configures the LLM:
-    - Uses `ChatGroq` with model `"openai/gpt-oss-120b"` and `GROQ_API_KEY` from `config.py`.
-    - Creates a REAct agent via `create_react_agent(llm, tools=tools)`.
-  - Defines a `SYSTEM_PROMPT` with instructions for when to use each tool.
-  - Provides `parse_response(stream)` to extract the final message and which tool was called from the streaming agent output.
-
-- **`backend/config.py`** (implied)
-  - Should provide configuration values such as:
-    - `GROQ_API_KEY`
-    - `GOOGLE_MAPS_API_KEY`
-    - Twilio credentials (e.g., `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, phone numbers)
-  - You create this file yourself and **do not commit your secrets**.
-
-- **`backend/tools.py`** (implied)
-  - Implements the concrete integrations:
-    - `query_medgemma(query: str) -> str`
-    - `call_emergency() -> None`
-    - Optional helpers for Google Maps / Twilio
-
 ---
 
-## Tech Stack
+## ⚙️ Installation & Setup
 
-- **Language:** Python (>= 3.11)
-- **Environment & packaging:** [`uv`](https://github.com/astral-sh/uv) (for virtualenv + dependency management via `pyproject.toml`)
-- **Backend:** FastAPI + Uvicorn
-- **Frontend:** Streamlit
-- **LLM / Agent:**
-  - `langchain`
-  - `langgraph`
-  - `langchain-groq` with `ChatGroq`
-- **Integrations:**
-  - Twilio (WhatsApp + Voice)
-  - Google Maps API (Places + Geocoding)
-  - Geopy / Requests (supporting utilities)
+### Prerequisites
+- Python **3.11** or higher
+- Git
+- API Keys for:
+  - [Groq Cloud](https://console.groq.com/)
+  - [Google Maps Platform](https://console.cloud.google.com/) (Enable **Geocoding API** and **Places API**)
+  - [Twilio Console](https://www.twilio.com/) (Account SID, Auth Token, Twilio Phone Number)
+  - [Meta for Developers](https://developers.facebook.com/) (WhatsApp Cloud API App)
 
-Dependencies (from `pyproject.toml`):
-
-- `fastapi`
-- `geopy`
-- `googlemaps`
-- `langchain`
-- `langchain-groq`
-- `langchain-openai`
-- `langgraph`
-- `ollama`
-- `pydantic`
-- `python-multipart` (needed for FastAPI form parsing, e.g. Twilio webhooks)
-- `requests`
-- `streamlit`
-- `twilio`
-- `uvicorn`
-
----
-
-## Prerequisites
-
-- Python **3.11+** installed on your system.
-- [`uv`](https://github.com/astral-sh/uv) installed (for virtual environment + dependency management).
-- API keys / credentials for:
-  - **Groq** (LLM): `GROQ_API_KEY`
-  - **Google Maps**: `GOOGLE_MAPS_API_KEY`
-  - **Twilio**:
-    - `TWILIO_ACCOUNT_SID`
-    - `TWILIO_AUTH_TOKEN`
-    - Verified phone numbers / WhatsApp sandbox setup.
-
----
-
-## Setup with `uv`
-
-All commands below assume you are in the project root: `safespace-ai-therapist/`.
-
-### 1. Clone and install
+### 1. Clone Repository & Setup Environment
 
 ```bash
-git clone https://github.com/AIwithhassan/safespace-ai-therapist.git
-cd safespace-ai-therapist
+# Clone the repository
+git clone https://github.com/tejasmahato2005/AI-THERAPIST.git
+cd AI-THERAPIST
 
-# Install dependencies and create .venv using uv
-uv sync
-```
+# Create virtual environment
+python3 -m venv .venv
 
-### 2. Activate the virtual environment
-
-```bash
-# macOS / Linux (zsh/bash)
+# Activate virtual environment
+# macOS / Linux:
 source .venv/bin/activate
+# Windows:
+# .venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
 ```
 
-If you prefer not to activate the venv manually, you can also run commands through uv directly (see examples below).
-
-### 3. Configure environment variables and `config.py`
-
-Create a file `backend/config.py` with your keys. For example:
-
-```python
-# backend/config.py
-
-GROQ_API_KEY = "your_groq_api_key_here"
-GOOGLE_MAPS_API_KEY = "your_google_maps_api_key_here"
-
-# Twilio (used by tools.py / emergency_call_tool)
-TWILIO_ACCOUNT_SID = "your_twilio_account_sid_here"
-TWILIO_AUTH_TOKEN = "your_twilio_auth_token_here"
-TWILIO_FROM_NUMBER = "+1234567890"  # your Twilio phone or WhatsApp-enabled number
-TWILIO_EMERGENCY_TO_NUMBER = "+1987654321"  # safety helpline / emergency contact
-```
-
-> **Security note:** Don’t commit real keys; use `.env` or environment variables in production.
-
-If you prefer environment variables, adapt `config.py` to read from `os.environ`.
+*(Alternatively, if using `uv`: `uv sync && source .venv/bin/activate`)*
 
 ---
 
-## Running the Backend (FastAPI + Twilio webhook)
+### 2. Configure Environment Variables
 
-### Option A: Using uv directly
+Create a `.env` file or populate your hosting environment variables with the following keys:
 
-From the project root:
+| Environment Variable | Description | Example / Format |
+| :--- | :--- | :--- |
+| `GROQ_API_KEY` | Groq Cloud API Key for ultra-fast LPU inference | `gsk_xxxxxxxxxxxxxxxxxxxx` |
+| `GOOGLE_MAPS_API_KEY` | Google Maps API key with Geocoding & Places enabled | `AIzaSyxxxxxxxxxxxxxxxxxxxx` |
+| `TWILIO_ACCOUNT_SID` | Twilio Account SID for voice dispatch | `ACxxxxxxxxxxxxxxxxxxxxxxxx` |
+| `TWILIO_AUTH_TOKEN` | Twilio Authentication Token | `xxxxxxxxxxxxxxxxxxxxxxxx` |
+| `TWILIO_FROM_NUMBER` | Twilio purchased virtual phone number | `+1234567890` |
+| `EMERGENCY_CONTACT` | Designated crisis contact phone number to receive urgent calls | `+919876543210` |
+| `WHATSAPP_TOKEN` | Permanent Meta System User Access Token | `EAAxxxxxxxxxxxxxxxxxxxx` |
+| `WHATSAPP_PHONE_NUMBER_ID` | WhatsApp Business Phone Number ID from Meta Portal | `1439658252553805` |
+| `WHATSAPP_VERIFY_TOKEN` | Custom verification secret string for Meta Webhook setup | `200506` *(or custom)* |
 
-```bash
-uv run uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
-```
-
-### Option B: Using the activated venv
-
-```bash
-cd backend
-uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-```
-
-This exposes:
-
-- `POST /ask` – JSON API for the Streamlit frontend.
-- `POST /whatsapp_ask` – Twilio WhatsApp webhook endpoint.
-
-### `POST /ask` – JSON endpoint
-
-- **URL:** `http://localhost:8000/ask`
-- **Method:** `POST`
-- **Content-Type:** `application/json`
-- **Body:**
-
-```json
-{
-  "message": "I’ve been feeling really anxious lately."
-}
-```
-
-- **Response (example):**
-
-```json
-{
-  "response": "Empathetic therapeutic guidance here...",
-  "tool_called": "ask_mental_health_specialist"
-}
-```
-
-### `POST /whatsapp_ask` – Twilio WhatsApp webhook
-
-- **Local URL:** `http://localhost:8000/whatsapp_ask`
-- **Public URL (via ngrok or similar):** `https://<your-ngrok-domain>/whatsapp_ask`
-- **Method:** `POST`
-- **Expected content-type:** `application/x-www-form-urlencoded`
-- **Key parameters (from Twilio):**
-  - `Body`: the incoming text message
-  - `From`: the sender’s WhatsApp number (may be used in tools)
-
-Example local test with `curl`:
-
-```bash
-curl -X POST \
-  http://localhost:8000/whatsapp_ask \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "Body=Hello, I’m feeling overwhelmed."
-```
-
-Response (simplified):
-
-```xml
-<Response>
-  <Message>AI therapist response here...</Message>
-</Response>
-```
-
-> If you see `422 Unprocessable Entity`, it usually means the `Body` form field is missing or the content-type is not `application/x-www-form-urlencoded`.
+> **Pro Tip:** In `backend/config.py`, all variables are systematically cleaned using `.strip()` to ensure accidental trailing newlines or whitespace (which cause `httpx.LocalProtocolError: Illegal header value`) never crash your production server.
 
 ---
 
-## Running the Frontend (Streamlit)
+### 3. Running Locally
 
-With the backend running on `http://localhost:8000`:
-
-From the project root:
-
+#### Step A: Launch the FastAPI Backend
 ```bash
-uv run streamlit run frontend.py
+# From workspace root
+python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
 ```
+The backend will boot on `http://localhost:8000`.
 
-This will:
-
-- Open (or provide a URL to) a Streamlit app, typically at `http://localhost:8501`.
-- Show a chat interface titled **"🧠 SafeSpace – AI Mental Health Therapist"**.
-- Let you type messages via `st.chat_input`.
-- Under the hood, each user message sends a `POST` request to `http://localhost:8000/ask`.
-- Display the assistant’s response and the name of the tool that was used.
+#### Step B: Launch the Streamlit Web Interface
+In a separate terminal window:
+```bash
+streamlit run frontend.py
+```
+Open `http://localhost:8501` to chat with Dr. Emily through the web dashboard.
 
 ---
 
-## Twilio WhatsApp Integration
+## 📲 Meta WhatsApp Cloud API Setup
 
-### 1. Expose the backend via a public URL
-
-Twilio needs to reach your FastAPI server over the public internet. A common approach is to use [ngrok](https://ngrok.com/).
-
-With the FastAPI server running on port 8000:
-
-```bash
-ngrok http 8000
-```
-
-Take note of the public HTTPS URL, e.g.: `https://abcd1234.ngrok.io`.
-
-### 2. Configure Twilio Sandbox / WhatsApp number
-
-In the Twilio Console:
-
-1. Go to your WhatsApp Sandbox or phone number configuration.
-2. Set the **Webhook URL** for incoming messages to:
-
-   ```text
-   https://abcd1234.ngrok.io/whatsapp_ask
+1. **Expose your local server (if testing locally)**:
+   ```bash
+   ngrok http 8000
    ```
+   Copy the public HTTPS forwarding URL (e.g., `https://xyz.ngrok-free.app`).
 
-3. Ensure the method is `POST` and the body is `application/x-www-form-urlencoded` (the default for Twilio).
+2. **Configure Webhook in Meta Developers Portal**:
+   - Navigate to **WhatsApp** ➔ **Configuration**.
+   - Set **Callback URL**: `https://<YOUR_DOMAIN>/webhook` (or `https://<YOUR_DOMAIN>/`).
+   - Set **Verify Token**: Must match your `WHATSAPP_VERIFY_TOKEN` (default: `200506`).
+   - Click **Verify and Save**.
 
-Now, messages sent to your Twilio WhatsApp number should be forwarded to `/whatsapp_ask`, which will:
+3. **Subscribe to Webhook Fields**:
+   - Under Webhook fields, click **Manage** and subscribe to **`messages`**.
 
-- Extract `Body` via `Form` parsing.
-- Run the LangGraph-based agent.
-- Return a TwiML `<Message>` body as the reply.
-
-### 3. Common pitfalls & troubleshooting
-
-- **422 Unprocessable Entity**
-  - Usually means FastAPI could not validate the request body.
-  - Check that `Body` is present in the form data.
-  - Ensure you are using `application/x-www-form-urlencoded`, not JSON.
-  - Confirm the path in Twilio (`/whatsapp_ask`) matches the backend route exactly.
-
-- **No response or Twilio error**
-  - Make sure the FastAPI server is running and the ngrok tunnel is active.
-  - Check logs in your terminal for Python exceptions (e.g., misconfigured `config.py`).
-
-- **Twilio signature validation** (optional hardening)
-  - For production, you should validate `X-Twilio-Signature` headers to ensure requests are genuinely from Twilio.
+4. **Send a Message**:
+   - Open WhatsApp on your phone and send any message (*e.g., "Hello Dr. Emily, I've had a tough week"*) to your test number.
+   - SafeSpace processes the message and responds in seconds!
 
 ---
 
-## Google Maps Therapist Finder Tool
-
-The tool `find_nearby_therapists_by_location(location: str)` in `backend/ai_agent.py`:
-
-- Uses `GOOGLE_MAPS_API_KEY` and the `googlemaps` Python client.
-- Steps:
-  1. Geocodes the user-provided location string to latitude/longitude.
-  2. Calls `places_nearby` with `keyword="Psychotherapist"` and a 5km radius.
-  3. Retrieves up to 5 top results and fetches phone numbers via `gmaps.place`.
-  4. Returns a formatted string listing therapists near the location.
-
-The agent decides when to call this tool (e.g., when a user asks for a therapist near "Berlin" or "San Francisco").
-
----
-
-## Emergency Call Tool
-
-The `emergency_call_tool()` in `backend/ai_agent.py`:
-
-- Calls `call_emergency()` from `backend/tools.py`.
-- Expected behavior:
-  - Initiate a Twilio voice call to a predefined emergency / helpline number.
-  - Provide a script or connect the user to human support.
-
-> **Ethical note:** Use extreme caution if you adapt this to real-world scenarios. Always comply with local regulations and best practices for crisis support.
-
----
-
-## Development Notes
-
-### Code style & structure
-
-- Separation of concerns:
-  - `backend/main.py`: HTTP layer (FastAPI routes, Twilio TwiML responses).
-  - `backend/ai_agent.py`: Agent orchestration and tool definitions.
-  - `backend/tools.py`: Concrete integrations (LLM, Twilio, etc.).
-  - `frontend.py`: UI only – no business logic.
-
-- Streaming agent:
-  - The agent is executed via `graph.stream(inputs, stream_mode="updates")`.
-  - `parse_response()` walks through the streaming updates to detect:
-    - Which tool (if any) was called.
-    - The final agent message to return.
-
-### Testing
-
-- There is a sample/test file `backend/test_location_tool.py` for validating the location-based therapist finder.
-- You can run tests (if configured) with:
-
-```bash
-uv run pytest
-```
-
-(If no tests are defined yet, you can create them under a `tests/` folder or alongside backend modules.)
-
----
-
-## Suggested Next Steps
-
-- Add **Twilio signature validation** for `/whatsapp_ask`.
-- Add more robust **error handling** around external API calls (Groq, Google Maps, Twilio).
-- Introduce a simple **rate limiting** or session tracking mechanism.
-- Expand tests, especially for tool behavior and edge cases (e.g., failed geocoding, throttled APIs).
-- Consider adding a small **UI section** explaining safety boundaries (e.g., "not a crisis service").
-
----
-
-## Disclaimer
-
-This project is intended as a **technical demonstration** of how to combine LLM tooling, Twilio, and location-based services for mental health support–style conversations. It **must not** be used as a replacement for licensed mental health professionals or emergency services.
-
-If you or someone you know is in immediate danger, contact local emergency services or a crisis hotline in your region.
-
-This project is intended as a **technical demonstration** of how to combine LLM tooling, Twilio, and location-based services for mental health support–style conversations. It **must not** be used as a replacement for licensed mental health professionals or emergency services.
-
-If you or someone you know is in immediate danger, contact local emergency services or a crisis hotline in your region.
-      - Uses `call_emergency()` (from `tools.py`) to trigger a Twilio voice call to a safety helpline.
-    - `find_nearby_therapists_by_location(location: str) -> str`
-      - Uses the Google Maps API to geocode a location and return nearby therapists (name, address, phone).
-  - Configures the LLM:
-    - Uses `ChatGroq` with model `"openai/gpt-oss-120b"` and `GROQ_API_KEY` from `config.py`.
-    - Creates a REAct agent via `create_react_agent(llm, tools=tools)`.
-  - Defines a `SYSTEM_PROMPT` with instructions for when to use each tool.
-  - Provides `parse_response(stream)` to extract the final message and which tool was called from the streaming agent output.
-
-- **`backend/config.py`** (implied, not shown)
-  - Should provide configuration values such as:
-    - `GROQ_API_KEY`
-    - `GOOGLE_MAPS_API_KEY`
-    - Twilio credentials (e.g., `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, phone numbers)
-  - You create this file yourself and **do not commit your secrets**.
-
-- **`backend/tools.py`** (implied, not shown)
-  - Implements the concrete integrations:
-    - `query_medgemma(query: str) -> str`
-    - `call_emergency() -> None`
-    - Optional helpers for Google Maps / Twilio
-
----
-
-## Tech Stack
-
-- **Language:** Python (>= 3.11)
-- **Environment & packaging:** [`uv`](https://github.com/astral-sh/uv) (for virtualenv + dependency management via `pyproject.toml`)
-- **Backend:** FastAPI + Uvicorn
-- **Frontend:** Streamlit
-- **LLM / Agent:**
-  - `langchain`
-  - `langgraph`
-  - `langchain-groq` with `ChatGroq`
-- **Integrations:**
-  - Twilio (WhatsApp + Voice)
-  - Google Maps API (Places + Geocoding)
-  - Geopy / Requests (supporting utilities)
-
-Dependencies (from `pyproject.toml`):
-
-- `fastapi`
-- `geopy`
-- `googlemaps`
-- `langchain`
-- `langchain-groq`
-- `langchain-openai`
-- `langgraph`
-- `ollama`
-- `pydantic`
-- `python-multipart` (needed for FastAPI form parsing, e.g. Twilio webhooks)
-- `requests`
-- `streamlit`
-- `twilio`
-- `uvicorn`
-
----
-
-## Prerequisites
-
-- Python **3.11+** installed on your system.
-- [`uv`](https://github.com/astral-sh/uv) installed (for virtual environment + dependency management).
-- API keys / credentials for:
-  - **Groq** (LLM): `GROQ_API_KEY`
-  - **Google Maps**: `GOOGLE_MAPS_API_KEY`
-  - **Twilio**:
-    - `TWILIO_ACCOUNT_SID`
-    - `TWILIO_AUTH_TOKEN`
-    - Verified phone numbers / WhatsApp sandbox setup.
-
----
-
-## Setup with `uv`
-
-All commands below assume you are in the project root: `safespace-ai-therapist/`.
-
-### 1. Create and activate the virtual environment
-
-```bash
-# Create (or reuse) the virtual environment and install dependencies
-uv sync
-
-# Activate the environment (macOS / Linux, zsh)
-source .venv/bin/activate
-```
-
-`uv sync` reads `pyproject.toml`, creates a `.venv` directory if needed, and installs all listed dependencies.
-
-### 2. Configure environment variables and `config.py`
-
-Create a file `backend/config.py` with your keys. For example:
-
-```python
-# backend/config.py
-
-GROQ_API_KEY = "your_groq_api_key_here"
-GOOGLE_MAPS_API_KEY = "your_google_maps_api_key_here"
-
-# Twilio (used by tools.py / emergency_call_tool)
-TWILIO_ACCOUNT_SID = "your_twilio_account_sid_here"
-TWILIO_AUTH_TOKEN = "your_twilio_auth_token_here"
-TWILIO_FROM_NUMBER = "+1234567890"  # your Twilio phone or WhatsApp-enabled number
-TWILIO_EMERGENCY_TO_NUMBER = "+1987654321"  # safety helpline / emergency contact
-```
-
-> **Security note:** Don’t commit real keys; use `.env` or environment variables in production.
-
-If you prefer environment variables, adapt `config.py` to read from `os.environ`.
-
----
-
-## Running the Backend (FastAPI + Twilio webhook)
-
-### Start the FastAPI server
-
-From the project root (with the virtualenv active):
-
-```bash
-cd backend
-uv run uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-```
-
-This exposes:
-
-- `POST /ask` – JSON API for the Streamlit frontend.
-- `POST /whatsapp_ask` – Twilio WhatsApp webhook endpoint.
-
-### `POST /ask` – JSON endpoint
-
-- **URL:** `http://localhost:8000/ask`
-- **Method:** `POST`
-- **Content-Type:** `application/json`
-- **Body:**
-
-```json
-{
-  "message": "I’ve been feeling really anxious lately."
-}
-```
-
-- **Response (example):**
-
-```json
-{
-  "response": "Empathetic therapeutic guidance here...",
-  "tool_called": "ask_mental_health_specialist"
-}
-```
-
-### `POST /whatsapp_ask` – Twilio WhatsApp webhook
-
-- **URL:** `https://<your-ngrok-domain>/whatsapp_ask` (public URL; see below)
-- **Method:** `POST`
-- **Expected content-type:** `application/x-www-form-urlencoded`
-- **Key parameters (from Twilio):**
-  - `Body`: the incoming text message
-  - `From`: the sender’s WhatsApp number (may be used in tools)
-
-Example local test with `curl`:
-
-```bash
-curl -X POST \
-  http://localhost:8000/whatsapp_ask \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "Body=Hello, I’m feeling overwhelmed."
-```
-
-Response (simplified):
-
-```xml
-<Response>
-  <Message>AI therapist response here...</Message>
-</Response>
-```
-
-> If you see `422 Unprocessable Entity`, it usually means the `Body` form field is missing or the content-type is not `application/x-www-form-urlencoded`.
-
----
-
-## Running the Frontend (Streamlit)
-
-With the backend running on `http://localhost:8000`:
-
-From the project root:
-
-```bash
-uv run streamlit run frontend.py
-```
-
-This will:
-
-- Open (or provide a URL to) a Streamlit app, typically at `http://localhost:8501`.
-- Show a chat interface titled **"🧠 SafeSpace – AI Mental Health Therapist"**.
-- Let you type messages via `st.chat_input`.
-- Under the hood, each user message sends a `POST` request to `http://localhost:8000/ask`.
-- Display the assistant’s response and the name of the tool that was used.
-
----
-
-## Twilio WhatsApp Integration
-
-### 1. Expose the backend via a public URL
-
-Twilio needs to reach your FastAPI server over the public internet. A common approach is to use [ngrok](https://ngrok.com/).
-
-With the FastAPI server running on port 8000:
-
-```bash
-ngrok http 8000
-```
-
-Take note of the public HTTPS URL, e.g.: `https://abcd1234.ngrok.io`.
-
-### 2. Configure Twilio Sandbox / WhatsApp number
-
-In the Twilio Console:
-
-1. Go to your WhatsApp Sandbox or phone number configuration.
-2. Set the **Webhook URL** for incoming messages to:
-
-   ```text
-   https://abcd1234.ngrok.io/whatsapp_ask
+## 🚀 Cloud Deployment (Render)
+
+SafeSpace is optimized for 1-click cloud hosting on [Render](https://render.com):
+
+1. **Create Web Service**: Link your GitHub repository (`AI-THERAPIST`).
+2. **Environment**: `Python 3`
+3. **Build Command**:
+   ```bash
+   pip install -r requirements.txt
    ```
-
-3. Ensure the method is `POST` and the body is `application/x-www-form-urlencoded` (the default for Twilio).
-
-Now, messages sent to your Twilio WhatsApp number should be forwarded to `/whatsapp_ask`, which will:
-
-- Extract `Body` via `Form` parsing.
-- Run the LangGraph-based agent.
-- Return a TwiML `<Message>` body as the reply.
-
-### 3. Common pitfalls & troubleshooting
-
-- **422 Unprocessable Entity**
-  - Usually means FastAPI could not validate the request body.
-  - Check that `Body` is present in the form data.
-  - Ensure you are using `application/x-www-form-urlencoded`, not JSON.
-  - Confirm the path in Twilio (`/whatsapp_ask`) matches the backend route exactly.
-
-- **No response or Twilio error**
-  - Make sure the FastAPI server is running and the ngrok tunnel is active.
-  - Check logs in your terminal for Python exceptions (e.g., misconfigured `config.py`).
-
-- **Twilio signature validation** (optional hardening)
-  - For production, you should validate `X-Twilio-Signature` headers to ensure requests are genuinely from Twilio.
+4. **Start Command**:
+   ```bash
+   uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+   ```
+5. **Add Environment Variables**: Add all variables from the table above in Render's **Environment** tab.
+6. **Set Webhook in Meta**: Update your Meta Developer Webhook callback URL to `https://your-render-service.onrender.com/webhook`.
 
 ---
 
-## Google Maps Therapist Finder Tool
+## 📡 REST API Reference
 
-The tool `find_nearby_therapists_by_location(location: str)` in `backend/ai_agent.py`:
+### 1. `POST /ask`
+Direct JSON endpoint for web frontends, mobile applications, or external services.
 
-- Uses `GOOGLE_MAPS_API_KEY` and the `googlemaps` Python client.
-- Steps:
-  1. Geocodes the user-provided location string to latitude/longitude.
-  2. Calls `places_nearby` with `keyword="Psychotherapist"` and a 5km radius.
-  3. Retrieves up to 5 top results and fetches phone numbers via `gmaps.place`.
-  4. Returns a formatted string listing therapists near the location.
-
-The agent decides when to call this tool (e.g., when a user asks for a therapist near "Berlin" or "San Francisco").
-
----
-
-## Emergency Call Tool
-
-The `emergency_call_tool()` in `backend/ai_agent.py`:
-
-- Calls `call_emergency()` from `backend/tools.py`.
-- Expected behavior:
-  - Initiate a Twilio voice call to a predefined emergency / helpline number.
-  - Provide a script or connect the user to human support.
-
-> **Ethical note:** Use extreme caution if you adapt this to real-world scenarios. Always comply with local regulations and best practices for crisis support.
+- **Request Headers**: `Content-Type: application/json`
+- **Request Body**:
+  ```json
+  {
+    "message": "Can you recommend a licensed therapist in Boston?"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "response": "I'd be glad to help you find local support. Here are licensed therapists located near Boston:\n- Boston Center for Therapy | 123 Commonwealth Ave | (617) 555-0199\n...",
+    "tool_called": "find_nearby_therapists_by_location"
+  }
+  ```
 
 ---
 
-## Development Notes
+### 2. `GET /webhook`
+Meta Graph API Webhook Verification endpoint.
+- Validates `hub.mode == "subscribe"` and `hub.verify_token == WHATSAPP_VERIFY_TOKEN`.
+- Echoes back `hub.challenge` as plain text.
 
-### Code style & structure
+---
 
-- Separation of concerns:
-  - `backend/main.py`: HTTP layer (FastAPI routes, Twilio TwiML responses).
-  - `backend/ai_agent.py`: Agent orchestration and tool definitions.
-  - `backend/tools.py`: Concrete integrations (LLM, Twilio, etc.).
-  - `frontend.py`: UI only – no business logic.
+### 3. `POST /webhook`
+Inbound WhatsApp Message Event Receiver.
+- Extracts sender phone number and message payload.
+- Streams user query through the LangGraph agent.
+- Automatically splits responses exceeding **4000 characters** into ordered sequential messages to honor WhatsApp's 4096-character limit.
 
-- Streaming agent:
-  - The agent is executed via `graph.stream(inputs, stream_mode="updates")`.
-  - `parse_response()` walks through the streaming updates to detect:
-    - Which tool (if any) was called.
-    - The final agent message to return.
+---
 
-### Testing
+## 🛡️ Safety & Ethical Guardrails
 
-- There is a sample/test file `backend/test_location_tool.py` (not shown here) for validating the location-based therapist finder.
-- You can run tests (if configured) with:
+> [!CAUTION]
+> **Emergency Notice**: SafeSpace 2.0 is an assistive AI research project and technology demonstration. It does **not** provide clinical psychiatric diagnosis or replace certified medical personnel.
 
+### Built-in Safety Mechanisms:
+1. **Autonomous Emergency Escalation**: The agent's cognitive graph monitors every turn for red-flag intent markers (suicide, self-harm, violent despair). If triggered, the agent prioritizes the `emergency_call_tool`, placing an instantaneous voice call to emergency numbers.
+2. **Non-Judgmental Clinical Framing**: Responses adhere to strict empathetic psychology standards without patronizing or providing invalidating medical claims.
+3. **Local Professional Handoff**: Whenever long-term therapy is appropriate, SafeSpace leverages Google Maps to bridge users to real, certified human professionals in their locality.
+
+---
+
+## 🧪 Testing
+
+Test the Google Maps therapist locator independently:
 ```bash
-uv run pytest
+python backend/test_location_tool.py
+```
+Expected output:
+```text
+Therapists near Kolkata:
+- Mind & Brain Clinic | Park Street | +91 33 2222 xxxx
+- Compassionate Minds | Salt Lake | +91 98 3000 xxxx
 ```
 
-(If no tests are defined yet, you can create them under a `tests/` folder or alongside backend modules.)
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! To contribute:
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
 ---
 
-## Suggested Next Steps
+## 📄 License & Credits
 
-- Add **Twilio signature validation** for `/whatsapp_ask`.
-- Add more robust **error handling** around external API calls (Groq, Google Maps, Twilio).
-- Introduce a simple **rate limiting** or session tracking mechanism.
-- Expand tests, especially for tool behavior and edge cases (e.g., failed geocoding, throttled APIs).
-- Consider adding a small **UI section** explaining safety boundaries (e.g., "not a crisis service").
+Distributed under the MIT License. See `LICENSE` for more information.
 
----
-
-## Disclaimer
-
-This project is intended as a **technical demonstration** of how to combine LLM tooling, Twilio, and location-based services for mental health support–style conversations. It **must not** be used as a replacement for licensed mental health professionals or emergency services.
-
-If you or someone you know is in immediate danger, contact local emergency services or a crisis hotline in your region.
+Developed with ❤️ by [Tejas Mahato](https://github.com/tejasmahato2005) & Contributors.
+Special acknowledgment to **Groq**, **LangChain**, **Meta**, **Twilio**, and **Google Maps Platform** for powering accessible AI infrastructure.

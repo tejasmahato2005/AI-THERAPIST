@@ -57,7 +57,8 @@ Users can converse naturally with **Dr. Emily Hartman**—a clinically attuned A
 
 ## 🏛️ System Architecture
 
-```mermaid
+```
+mermaid
 flowchart TD
     subgraph Clients["Omnichannel User Frontends"]
         WA[("📱 WhatsApp User")] <-->|HTTPS Webhook| META["Meta WhatsApp Cloud API v21.0"]
